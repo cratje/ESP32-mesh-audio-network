@@ -1,0 +1,181 @@
+#include <Arduino.h>
+#include <SPI.h>
+#include <SD.h>
+#include "driver/i2s.h"
+#include <painlessMesh.h>
+
+// ---------------- Mesh Config ----------------
+#define MESH_PREFIX     "AudioMesh"
+#define MESH_PASSWORD   "meshpassword"
+#define MESH_PORT       5555
+
+painlessMesh mesh;
+bool isPlaying = false;
+
+
+// ---------------- Pins ----------------
+#define SD_CS    5
+#define SPI_MOSI 23 //D1
+#define SPI_MISO 19 //D0
+#define SPI_SCK  18
+
+#define I2S_LRC   27   // Word Select / LRCLK
+#define I2S_BCLK  26   // Bit Clock
+#define I2S_DOUT  25   // Data
+
+#define START_BTN 13
+
+#define LED_PIN 16
+#define BLINK_INTERVAL 200  // ms between LED toggles when searching
+
+// ---------------- WAV Config ----------------
+File audioFile;
+const int SAMPLE_RATE = 44100;
+const int BITS_PER_SAMPLE = 16;
+const int CHANNELS = 2;
+const int HEADER_SIZE = 44;
+const int seconds = 5; //adjust here to change how long the ESP's wait before starting to play.
+
+// ---------------- Globals ----------------
+bool shouldPlay = false;
+uint64_t startTime = 10;  // mesh time to start
+bool meshConnected = false;
+unsigned long lastBlink = 0;
+bool ledState = false;
+
+// ---------------- I2S Init ----------------
+void i2s_init() {
+  i2s_config_t i2s_config = {
+    .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+    .sample_rate = SAMPLE_RATE,
+    .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+    .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+    .communication_format = I2S_COMM_FORMAT_I2S,
+    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+    .dma_buf_count = 8,
+    .dma_buf_len = 1024,
+    .use_apll = false,
+    .tx_desc_auto_clear = true,
+    .fixed_mclk = 0
+  };
+
+  i2s_pin_config_t pin_config = {
+    .bck_io_num = I2S_BCLK,
+    .ws_io_num = I2S_LRC,
+    .data_out_num = I2S_DOUT,
+    .data_in_num = I2S_PIN_NO_CHANGE
+  };
+
+  i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
+  esp_err_t r = i2s_start(I2S_NUM_0);
+  Serial.printf("i2s_start: %d\n", r);
+  i2s_set_pin(I2S_NUM_0, &pin_config);
+  i2s_zero_dma_buffer(I2S_NUM_0);
+}
+
+// ---------------- Mesh Callbacks ----------------
+void receivedCallback(uint32_t from, String &msg) {
+  Serial.printf("Got msg from %u: %s\n", from, msg.c_str());
+
+  if (msg.startsWith("START@")) {
+    startTime = strtoull(msg.substring(6).c_str(), NULL, 10);
+    shouldPlay = true;
+    Serial.printf("Scheduled start at mesh time %llu\n", startTime);
+  }
+}
+
+void newConnectionCallback(uint32_t nodeId) {
+  Serial.printf("New Connection, nodeId = %u\n", nodeId);
+  meshConnected = true;
+  digitalWrite(LED_PIN, HIGH);  // solid ON
+}
+
+void changedConnectionCallback() {
+  if (mesh.getNodeList().size() > 0) {
+    meshConnected = true;
+    digitalWrite(LED_PIN, HIGH);  // solid ON
+  } else {
+    meshConnected = false;
+  }
+}
+
+// ---------------- Playback ----------------
+void playWav() {
+  audioFile = SD.open("/Amaze.wav");
+  if (!audioFile) {
+    Serial.println("File not found!");
+    return;
+  }
+
+  audioFile.seek(HEADER_SIZE); // skip header
+  isPlaying = true;
+  Serial.println("Playback started.");
+}
+
+void handlePlayback() {
+  static uint8_t buffer[2048];
+
+  if (!isPlaying) return;
+  if (!audioFile.available()) {
+    Serial.println("Playback finished.");
+    audioFile.close();
+    isPlaying = false;
+    return;
+  }
+
+  size_t bytesRead = audioFile.read(buffer, sizeof(buffer));
+  size_t bytesWritten;
+  i2s_write(I2S_NUM_0, buffer, bytesRead, &bytesWritten, portMAX_DELAY);
+}
+
+// ---------------- Setup ----------------
+void setup() {
+  Serial.begin(115200);
+  pinMode(START_BTN, INPUT_PULLUP);
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);
+  SPI.begin(SPI_SCK, SPI_MISO, SPI_MOSI);
+  if (!SD.begin(SD_CS, SPI, 10000000)) {
+    Serial.println("SD init failed!");
+  }
+
+  i2s_init();
+
+  mesh.setDebugMsgTypes(ERROR | STARTUP | CONNECTION);
+  mesh.init(MESH_PREFIX, MESH_PASSWORD, MESH_PORT);
+  mesh.onReceive(&receivedCallback);
+  mesh.onNewConnection(&newConnectionCallback);
+  mesh.onChangedConnections(&changedConnectionCallback);
+}
+
+// ---------------- Loop ----------------
+void loop() {
+  mesh.update();       // mesh keeps working
+  handlePlayback();    // stream next chunk if playing
+
+  if (digitalRead(START_BTN) == LOW) {
+    uint64_t now = mesh.getNodeTime();
+    uint64_t future = now + seconds * 1000000ULL;
+    String msg = "START@" + String(future);
+    mesh.sendBroadcast(msg);
+    Serial.printf("Broadcast START at %llu\n", future);
+    startTime = future;
+    shouldPlay = true;
+    delay(1000);
+  }
+
+  if (shouldPlay && mesh.getNodeTime() >= startTime) {
+    shouldPlay = false;
+    Serial.println("starting playback");
+    playWav();
+  }
+  // Handle LED blink when not connected
+  if (!meshConnected) {
+    unsigned long now = millis();
+    if (now - lastBlink >= BLINK_INTERVAL) {
+      ledState = !ledState;
+      digitalWrite(LED_PIN, ledState);
+      lastBlink = now;
+    }
+  }
+}
