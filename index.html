@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>ESP32 Multitrack Audio Mesh</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap" role="main">
+    <header>
+      <h1>ESP32 Meshed Audio player</h1>
+      <p class="lead">This website explains you how to build a meshed audio player that runs off SD-cards on multiple ESP32's</p>
+    </header>
+
+    <article class="content">
+      <p>First of all you will need some parts. Here's a small list of parts. I sourced most from amazon & aliexpress, as it's very hard to source electronics parts elsewhere ლ(╹◡╹ლ) <br>
+        -ESP32 : 
+        <a href="https://www.amazon.com.be/AZDelivery-NodeMCU-successor-compatible-included/dp/B071P98VTG/ref=sr_1_1_sspa?crid=2GMRR5LBGY8NR&dib=eyJ2IjoiMSJ9.ZSpEMuf5SLFWXNmoHZfHqXodzIb8yPJvSAEdhKR826KNM57Hb-R5LMrzxIQlBMdqc1TxnNCkhV0T1WZjRZa-sNBwVksnZweRP63lJYThitesLvbJ77ajLk4IQtdjX_1lKb5mLW20vNKzMAQrZhOFPxZXzYjxGWfsefEB7h37Nx0TDGHjbFOI1GFQDP_3HdRCpRv4k2op20ZlFjCVp7DBL0huD4aoVF1x6th_lctUTYb0BYutlwG-ofssMHnWz9xpfwgTrsgVJUfu-cflMKkNcg4vX0lX3ORFCWEdS0gkxY8.tH45iaH5c2IX3kSPb6xcnYuiYF0cnNRbpGTpJdrzLa4&dib_tag=se&keywords=azdelivery+esp32&qid=1760617730&sprefix=azdelivery+esp32%2Caps%2C79&sr=8-1-spons&sp_csd=d2lkZ2V0TmFtZT1zcF9hdGY&psc=1" target="_blank" rel="noopener">
+            AZDelivery that has a 5V out pin for easy voltage for micro SD.
+        </a><br>
+        -Adafruit <a href=https://www.kiwi-electronics.com/nl/microsd-card-breakout-boardplus-3206?country=BE&gad_source=1&gad_campaignid=292887425&gbraid=0AAAAADuMvuemF7WEiTTyx4JaZGLcuGOct&gclid=CjwKCAjwr8LHBhBKEiwAy47uUsnHerch2Pgc31uOnz-entctXHZj5Mx1yjCjgEGqQLl4atIchYk-zhoCfdwQAvD_BwE target="_blank" rel="noopener"> MicroSD Breakout board.
+        </a><br>
+        -Micro SD card (32 Gb MAX) <br>
+        - <a href="https://www.amazon.com.be/dp/B0F21T7Q3P?ref=ppx_yo2ov_dt_b_fed_asin_title" target="_blank" rel="noopener">
+        MAX98357A I2S amp.
+        </a><br>
+        -a PCB button <br>
+        -<a href="https://www.amazon.com.be/dp/B07R1W6169?ref=ppx_yo2ov_dt_b_fed_asin_title" target="_blank" rel="noopener">perfboard</a>, I used these small sized ones as they fit everything perfectly.<br>
+        -a battery system. The ESP32 can run off a normal powerbank, or you can <a href="https://www.amazon.com.be/dp/B07R1W6169?ref=ppx_yo2ov_dt_b_fed_asin_title" target="_blank" rel="noopener">
+        build your own</a> small battery system using the following and an 18650 cell.<br>
+        -some wire and some solder<br>
+        -optionally an LED and a 220 or 270 ohm resistor.
+      </p>
+
+      <div class="image-row">
+        <img src="images/1_MicroSD.JPG" alt="Micro SD">
+        <img src="images/2_MicroSD.JPG" alt="Position Micro SD">
+        <img src="images/3_MicroSD.JPG" alt="Soldering on Micro SD">
+        </div>
+        
+        <p>We start with soldering the MicroSD card. Solder on the micro SD pins and then place it in the middle of the perfboard on one side. You can solder it on directly. There should be 3 free pins on each side of the perfboard so the micro SD is perfectly centered.
+      </p>
+
+      <div class="image-row">
+        <img src="images/4_ESP321.JPG" alt="Position ESP32">
+        <img src="images/5_ESP322.JPG" alt="Position ESP32">
+        <img src="images/6_ESP323.JPG" alt="Position ESP32">
+        </div>
+
+         <p>Now we can solder on the ESP32. Take care in how you position it. The USB input should point the other way as the Micro SD breakout. You can't insert the pins fully, as there is not enough space on the perfboard and we want our audip player to stay small.<br>
+            Go ahead and solder on the pins on the four corners of the ESP32, just to keep it in place.
+      </p>
+
+      <div class="image-row">
+        <img src="images/7_WIRE.JPG" alt="Position ESP32">
+        <img src="images/8_WIRE.JPG" alt="Position ESP32">
+        </div>
+
+         <p>We can now connect the first wire, which will provide the MicroSD board with it's necessary voltage. I do this by first adding some extra solder in the hole just next to the two pins we want to connect. Go ahead and fill hole T11 and B11. This way the wire has some extra structural integrity. Now connect hole T12 with hole A11 using a red wire, so we know it's voltage in.
+      </p>
+
+      <div class="image-row">
+        <img src="images/9_WIRE.JPG" alt="Position ESP32">
+        <img src="images/10_WIRE.JPG" alt="Position ESP32">
+        </div>
+
+         <p>We now solder on the next wire, which connects the micro CLK on the ESP32's GPIO 18. On the underside of the PCB, this means we connect A8 with J2. I added solder in the holes next to it again. <br> data that is exchanged between the ESP32 and the micro SD card go over a protocol titled SPI. This wire shares a common clock between the two PCB's, so the data is synchronised.
+      </p>
+
+      <figure>
+        <img src="images/11_SPI_LINES.JPG" alt="Voorbeeldfoto 2">
+        <figcaption>PAD A7 to I2, PAD A6 to C2 and PAD A5 to K2</figcaption>
+      </figure>
+
+         <p>We can now solder on the rest of the SPI lines, as indicated in the image above. We are connecting the following:<br>
+            -MISO (D0): Master input slave output, this sends date from the SD card to ESP32.<br>
+            -MOSI (D1): Master output slave input, this controls the SD card from ESP32.<br>
+            -CS: the chip select that tells the SD-card to wake up.
+      </p>
+
+      <div class="image-row">
+        <img src="images/12_I2SAMP.JPG" alt="Position I2S AMP">
+        <img src="images/13_I2SAMP.JPG" alt="Position I2S AMP">
+        </div>
+
+         <p>We can now solder on the I2S amp. Take care to position it correctly, as we will build direct solder bridges to the pins next to it. Vin should be on F14. This way LRC can be directly bridged to GPIO27. Go ahead and solder on all the legs of the break-out.
+      </p>
+
+      <figure>
+        <img src="images/14_I2SAMP_POWER.JPG" alt="Voorbeeldfoto 2">
+        <figcaption>Bridge the power for the I2S AMP</figcaption>
+      </figure>
+
+      <p>We will now make a power trace to power the I2S amp. Connect B12 to F14 by either building up solder or running a wire. Take care to not bridge the gap with the SD-card voltage in, as it will power our 3.3v pin on the ESP32 with 5v, which might ruin it!
+      </p>
+      <figure>
+        <img src="images/15_I2S.JPG" alt="Voorbeeldfoto 2">
+        <figcaption>Bridge the data connections for the I2S amp</figcaption>
+      </figure>
+
+      <p>We can now bridge the other lines for the I2S amp. These are:<br>
+        -I2S LRC: the clock, which explains to the amp which part of the data is for the Left or Right channel<br>
+        -I2S BCLK: the clock signal which synchonises the individual bits, so the data doesn't get jumbled<br>
+        -I2S data: the actual data which contains the music.<br>
+        <br>
+        We are now nearing the end and only need to attach the button and I2S ground still.
+      </p>
+
+      <div class="image-row">
+        <img src="images/16_Button.JPG" alt="Position I2S AMP">
+        <img src="images/17_Button.JPG" alt="Position I2S AMP">
+        <img src="images/18_Button.JPG" alt="Position I2S AMP">
+        </div>
+
+         <p>Place the button in such a way that it will connect Ground with pin 13. Seeing I didn't have a button, I ended up using a switch. Run the traces so pin 13 is on the input and GND on the other side. I added an extra trace for safety. As soon as the button is connected, you can also run a trace from the GROUND of the I2S amp on PAD G14 to the ground of the button on PAD O14.<br>
+            <br>
+            You are now finished. The steps below are an extra for connectivity, but the ESP32 should now be able to make sound once we upload the code.<br>
+            Below the optional LED:
+      </p>
+
+      <div class="image-row">
+        <img src="images/EXTRA_LED1.JPG" alt="Position I2S AMP">
+        <img src="images/EXTRA_LED3.JPG" alt="Position I2S AMP">
+        <img src="images/EXTRA_LED4.JPG" alt="Position I2S AMP">
+        </div>
+
+         <p>An LED has two legs. The longest one indicates the positive leg. You can place the long let in PAD M1 and bend it to connect it with PAD M2 or pin 16 on the ESP32. Solder the shorter leg, or the negative one on PAD L1 and bend it towards PAD I1. Insert a 270 ohm resistor in pad I1 and H1 by bending it vertically. Use one leg of the resistor to bridge towards GND on the ESP32 on pad H2. Snip off the other legs.
+      </p>
+      <div class="image-row">
+        <img src="images/EXTRA_LED5.JPG" alt="Position I2S AMP">
+        <img src="images/EXTRA_LED6.JPG" alt="Position I2S AMP">
+        </div>
+
+         <p>You have now finished soldering and we only need to upload the code. To connect to an ESP32, you have to install Arduino IDE and the proper drivers for your ESP32 type. Below is the code you can upload to the ESP32s, which will make them connect to eachother automatically.<br>
+            As you can read from the code, the ESP32's LED will blink up onto the point it managed to connect itself with another ESP32, and as soon as they are meshed, pushing the button will start playback after the amount of seconds you specified (standard 5)
+      </p> 
+
+      <div class="code-box" data-file="code/example1.html">
+        <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+        <pre><code>Loading code…</code></pre>
+        </div>
+
+        <script src="script.js"></script>
+
+
+      <p style="text-align:center; color:var(--muted); font-size:.95rem;">Einde van de pagina — klaar om te publiceren.</p>
+    </article>
+
+  </main>
+</body>
+</html>

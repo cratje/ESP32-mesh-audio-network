@@ -1,0 +1,144 @@
+:root{
+    --bg:#000;
+    --fg:#fff;
+    --muted: #cfcfcf;
+    --max-width: 900px;
+}
+html,body{height:100%;}
+body{
+    margin:0;
+    background:var(--bg);
+    color:var(--fg);
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start; /* start so page scrolls naturally */
+    padding:40px 20px;
+    line-height:1.6;
+}
+
+.wrap{
+    width:100%;
+    max-width:var(--max-width);
+    text-align:center; /* center text and figures */
+    margin:0 auto;
+}
+
+h1{
+    font-size:clamp(1.4rem, 2.6vw, 2.2rem);
+    margin:0 0 .5rem 0;
+    letter-spacing: -0.01em;
+}
+
+p.lead{
+    color:var(--muted);
+    margin-top:0;
+    margin-bottom:1.25rem;
+    font-size:1rem;
+}
+
+figure{
+    margin:2rem 0;
+    display:flex;
+    flex-direction:column;
+    gap:.5rem;
+    align-items:center; /* center the image */
+}
+
+img{
+    max-width:100%;
+    height:auto;
+    display:block;
+    border-radius:12px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.03) inset;
+    object-fit:cover;
+}
+
+figcaption{
+    font-size:.9rem;
+    color:var(--muted);
+    max-width:80ch;
+}
+
+.image-row {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin: 2rem 0; /* ⬅ same as your figure spacing */
+}
+
+.image-row img {
+max-width: 30%;
+height: auto;
+border-radius: 12px;
+box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+}
+
+/* Small helper to keep long paragraphs readable */
+.content p{margin:0 0 1rem 0; text-align:left;}
+
+@media (max-width:600px){
+    body{padding:28px 14px}
+    .wrap{padding:0}
+    .content p{font-size:1rem}
+}
+a {
+color: #66b3ff;            /* light blue link color */
+text-decoration: underline; /* or none if you prefer */
+}
+
+a:hover {
+color: #99ccff;
+text-decoration: none;      /* optional hover style */
+}
+
+/* Accessibility: high contrast focus styles */
+a, button{outline-color:transparent}
+:focus{outline:3px solid #fff3; outline-offset:3px}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce){
+    *{transition:none!important}
+}
+
+.code-box {
+position: relative;
+background: #111;
+border: 1px solid #333;
+border-radius: 8px;
+padding: 1rem;
+margin: 2rem 0;
+text-align: left;
+overflow-x: auto;  /* allows horizontal scroll if needed */
+}
+
+.code-box pre {
+margin: 0;
+color: #eee;
+font-family: "Fira Code", monospace;
+font-size: 0.95rem;
+line-height: 1.5;
+white-space: pre; /* keeps indentation */
+}
+
+.copy-btn {
+position: absolute;
+top: 8px;
+right: 8px;
+background: #222;
+color: #ccc;
+border: 1px solid #444;
+border-radius: 6px;
+padding: 0.25rem 0.6rem;
+font-size: 0.8rem;
+cursor: pointer;
+transition: all 0.2s ease;
+}
+
+.copy-btn:hover {
+background: #444;
+color: #fff;
+}
